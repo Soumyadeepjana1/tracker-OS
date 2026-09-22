@@ -1,0 +1,363 @@
+@import 'tailwindcss';
+
+/* ------------------------------------------------------------------ *
+ * DevOps Learning OS — design tokens
+ * Dark is the default theme; `.dark` on <html> drives the overrides.
+ * ------------------------------------------------------------------ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --canvas: #f4f6fb;
+  --canvas-grad: radial-gradient(1200px 600px at 12% -10%, #e5edff 0%, transparent 60%),
+    radial-gradient(900px 500px at 100% 0%, #ecfeff 0%, transparent 55%);
+  --surface: #ffffff;
+  --surface-2: #f8fafc;
+  --surface-3: #eef2f7;
+  --surface-hover: #f1f5f9;
+  --line: #e3e8f0;
+  --line-strong: #cbd5e1;
+  --fg: #0f172a;
+  --fg-muted: #55627a;
+  --fg-subtle: #79839a;
+  --brand: #4f46e5;
+  --brand-soft: #eef0ff;
+  --brand-fg: #ffffff;
+  --accent: #0891b2;
+  --accent-soft: #e0f7fb;
+  --ok: #059669;
+  --ok-soft: #e7f8f1;
+  --warn: #b45309;
+  --warn-soft: #fdf3e3;
+  --danger: #dc2626;
+  --danger-soft: #fdecec;
+  --info: #2563eb;
+  --info-soft: #e8efff;
+  --shadow-card: 0 1px 2px rgb(15 23 42 / 0.06), 0 8px 24px -12px rgb(15 23 42 / 0.18);
+  --shadow-pop: 0 24px 60px -18px rgb(15 23 42 / 0.28);
+  --ring: rgb(79 70 229 / 0.35);
+}
+
+.dark {
+  --canvas: #070a10;
+  --canvas-grad: radial-gradient(1100px 560px at 10% -12%, #14243d 0%, transparent 58%),
+    radial-gradient(900px 520px at 100% -5%, #10283a 0%, transparent 52%);
+  --surface: #0e131c;
+  --surface-2: #131a25;
+  --surface-3: #1a2331;
+  --surface-hover: #17202d;
+  --line: #202b3b;
+  --line-strong: #2e3c52;
+  --fg: #e9eef8;
+  --fg-muted: #97a3b9;
+  --fg-subtle: #6b7789;
+  --brand: #6d5efc;
+  --brand-soft: #1a1b3a;
+  --brand-fg: #ffffff;
+  --accent: #22d3ee;
+  --accent-soft: #0d2c36;
+  --ok: #34d399;
+  --ok-soft: #0c2a24;
+  --warn: #fbbf24;
+  --warn-soft: #2c2410;
+  --danger: #f87171;
+  --danger-soft: #2e1618;
+  --info: #60a5fa;
+  --info-soft: #132540;
+  --shadow-card: 0 1px 0 rgb(255 255 255 / 0.02) inset, 0 18px 40px -24px rgb(0 0 0 / 0.8);
+  --shadow-pop: 0 30px 70px -20px rgb(0 0 0 / 0.85);
+  --ring: rgb(109 94 252 / 0.45);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-surface-hover: var(--surface-hover);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-fg-subtle: var(--fg-subtle);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-fg: var(--brand-fg);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+
+  --radius-card: 16px;
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+
+  --animate-fade-in: fade-in 0.28s ease-out both;
+  --animate-rise: rise 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-pop: pop 0.18s ease-out both;
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes shimmer {
+  0% {
+    background-position: -180% 0;
+  }
+  100% {
+    background-position: 180% 0;
+  }
+}
+@keyframes pulse-ring {
+  0% {
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgb(52 211 153 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(52 211 153 / 0);
+  }
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scrollbar-gutter: stable;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100dvh;
+    background-color: var(--canvas);
+    background-image: var(--canvas-grad);
+    background-attachment: fixed;
+    color: var(--fg);
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv11', 'ss01';
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  * {
+    border-color: var(--line);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 40%, transparent);
+    color: var(--fg);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--fg-subtle);
+    background-clip: content-box;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-weight: 650;
+    letter-spacing: -0.015em;
+  }
+}
+
+/* ---------------- component-level helpers ---------------- */
+
+@utility card-base {
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+@utility glass {
+  background-color: color-mix(in oklab, var(--surface) 82%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+}
+
+@utility grid-bg {
+  background-image: linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* Markdown-ish note rendering */
+.prose-note {
+  font-size: 0.9rem;
+  line-height: 1.7;
+  color: var(--fg-muted);
+  overflow-wrap: anywhere;
+}
+.prose-note > *:first-child {
+  margin-top: 0;
+}
+.prose-note h1,
+.prose-note h2,
+.prose-note h3 {
+  color: var(--fg);
+  margin: 1.1em 0 0.5em;
+  line-height: 1.3;
+}
+.prose-note h1 {
+  font-size: 1.3rem;
+}
+.prose-note h2 {
+  font-size: 1.1rem;
+}
+.prose-note h3 {
+  font-size: 0.98rem;
+}
+.prose-note p {
+  margin: 0.65em 0;
+}
+.prose-note ul,
+.prose-note ol {
+  margin: 0.6em 0;
+  padding-left: 1.35em;
+}
+.prose-note ul {
+  list-style: disc;
+}
+.prose-note ol {
+  list-style: decimal;
+}
+.prose-note li {
+  margin: 0.25em 0;
+}
+.prose-note a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.prose-note code {
+  font-family: var(--font-mono);
+  font-size: 0.82em;
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+  color: var(--fg);
+}
+.prose-note pre {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.prose-note pre code {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--fg);
+}
+.prose-note blockquote {
+  margin: 0.8em 0;
+  padding: 0.35em 0.9em;
+  border-left: 3px solid var(--brand);
+  background: var(--surface-2);
+  border-radius: 0 10px 10px 0;
+  color: var(--fg-muted);
+}
+.prose-note hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 1.2em 0;
+}
+.prose-note table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.8em 0;
+  font-size: 0.82rem;
+}
+.prose-note th,
+.prose-note td {
+  border: 1px solid var(--line);
+  padding: 0.45em 0.6em;
+  text-align: left;
+}
+.prose-note th {
+  background: var(--surface-2);
+  color: var(--fg);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}

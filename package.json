@@ -1,0 +1,31 @@
+{
+  "name": "devops-learning-os",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "A fully client-side personal DevOps Learning Management Dashboard. Deploys to GitHub Pages with no backend.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "typecheck": "tsc --noEmit",
+    "test:smoke": "node scripts/smoke.mjs"
+  },
+  "dependencies": {
+    "idb": "^8.0.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "react-router-dom": "^7.18.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "puppeteer-core": "^24.0.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^5.9.3",
+    "vite": "^8.3.0"
+  }
+}
