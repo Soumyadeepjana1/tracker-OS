@@ -9,6 +9,10 @@ export const TIMER_STORAGE_KEY = 'devops-os:timer';
 export const DEFAULT_SETTINGS: Settings = {
   name: '',
   githubUsername: '',
+  /** `owner/name`. Left empty by default: the app auto-detects it from the
+   *  GitHub Pages URL or the CI build, so nothing has to be hard-coded. */
+  githubRepo: '',
+  githubBranch: 'main',
   dailyStudyTargetMinutes: 240,
   weeklyStudyTargetMinutes: 1_500,
   targetJobDate: addDays(todayISO(), 150),
@@ -74,12 +78,19 @@ export function mergeSettings(base: Settings, patch: Partial<Settings> | undefin
     ...base,
     ...patch,
     ai: { ...base.ai, ...(patch.ai ?? {}) },
+    githubUsername: stringOr(patch.githubUsername, base.githubUsername),
+    githubRepo: stringOr(patch.githubRepo, base.githubRepo),
+    githubBranch: stringOr(patch.githubBranch, base.githubBranch) || base.githubBranch,
     dailyStudyTargetMinutes: positiveOr(patch.dailyStudyTargetMinutes, base.dailyStudyTargetMinutes),
     weeklyStudyTargetMinutes: positiveOr(patch.weeklyStudyTargetMinutes, base.weeklyStudyTargetMinutes),
     devopsDailyMinutes: positiveOr(patch.devopsDailyMinutes, base.devopsDailyMinutes),
     javaDailyMinutes: positiveOr(patch.javaDailyMinutes, base.javaDailyMinutes),
     theme: isTheme(patch.theme) ? patch.theme : base.theme,
   };
+}
+
+function stringOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
 }
 
 function positiveOr(value: unknown, fallback: number): number {

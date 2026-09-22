@@ -1,6 +1,8 @@
 import type {
   BackupPayload,
   Confidence,
+  QuizAttempt,
+  QuizMode,
   Course,
   CourseModule,
   CourseStatus,
@@ -41,6 +43,7 @@ export interface BackupSource {
   notes: Note[];
   sessions: StudySession[];
   revisions: RevisionRecord[];
+  quizzes: QuizAttempt[];
   settings: Settings;
 }
 
@@ -56,6 +59,7 @@ export function buildBackup(source: BackupSource): BackupPayload {
     notes: source.notes,
     sessions: source.sessions,
     revisions: source.revisions,
+    quizzes: source.quizzes,
     settings: source.settings,
     meta: {
       counts: {
@@ -66,6 +70,7 @@ export function buildBackup(source: BackupSource): BackupPayload {
         notes: source.notes.length,
         sessions: source.sessions.length,
         revisions: source.revisions.length,
+        quizzes: source.quizzes.length,
       },
     },
   };
@@ -271,6 +276,26 @@ export function normalizeRevision(raw: unknown): RevisionRecord {
   };
 }
 
+export function normalizeQuiz(raw: unknown): QuizAttempt {
+  const record = asRecord(raw);
+  const timestamp = new Date().toISOString();
+  const total = Math.max(0, Math.round(asNumber(record.total, 0)));
+  const correct = clamp(Math.round(asNumber(record.correct, 0)), 0, Math.max(total, 1));
+  return {
+    id: asId(record.id, 'qiz'),
+    date: asIsoDate(record.date, todayISO()),
+    mode: asEnum<QuizMode>(record.mode, ['auto', 'recall'], 'auto'),
+    subject: asString(record.subject, 'All subjects'),
+    total,
+    correct,
+    score: clamp(Math.round(asNumber(record.score, total ? (correct / total) * 100 : 0)), 0, 100),
+    durationSeconds: Math.max(0, Math.round(asNumber(record.durationSeconds, 0))),
+    missed: asStringArray(record.missed),
+    createdAt: asString(record.createdAt, timestamp),
+    updatedAt: asString(record.updatedAt, timestamp),
+  };
+}
+
 export type ImportResult =
   | { ok: true; payload: Required<Omit<BackupPayload, 'meta'>> & { meta?: Record<string, unknown> } }
   | { ok: false; error: string };
@@ -296,7 +321,7 @@ export function parseBackup(text: string): ImportResult {
   const record = asRecord(parsed);
   if (!Object.keys(record).length) return { ok: false, error: 'The file does not contain an object.' };
 
-  const hasAnyCollection = ['courses', 'topics', 'tasks', 'projects', 'notes', 'sessions', 'revisions'].some(
+  const hasAnyCollection = ['courses', 'topics', 'tasks', 'projects', 'notes', 'sessions', 'revisions', 'quizzes'].some(
     (key) => Array.isArray(record[key]),
   );
   if (!hasAnyCollection) {
@@ -321,6 +346,8 @@ export function parseBackup(text: string): ImportResult {
       notes: asArray(record.notes).map(normalizeNote),
       sessions: asArray(record.sessions).map(normalizeSession),
       revisions: asArray(record.revisions).map(normalizeRevision),
+      // Absent in backups made before practice mode shipped — defaults to [].
+      quizzes: asArray(record.quizzes).map(normalizeQuiz),
       settings,
       meta: asRecord(record.meta),
     },
@@ -437,6 +464,16 @@ export function progressToMarkdown(source: BackupSource): string {
   lines.push(`- Total logged: **${formatMinutes(totalMinutes)}** across ${source.sessions.length} sessions`);
   lines.push(`- Tasks completed: **${source.tasks.filter((task) => task.status === 'completed').length}**`);
 
+  if (source.quizzes.length) {
+    const best = Math.max(...source.quizzes.map((attempt) => attempt.score));
+    const average = Math.round(sum(source.quizzes.map((attempt) => attempt.score)) / source.quizzes.length);
+    lines.push('', '## Practice', '');
+    lines.push(`- ${source.quizzes.length} round(s) · average **${average}%** · best **${best}%**`);
+    for (const attempt of [...source.quizzes].sort((a, b) => b.date.localeCompare(a.date)).slice(0, 5)) {
+      lines.push(`- ${attempt.date} — ${attempt.subject} ${attempt.correct}/${attempt.total} (${attempt.score}%)`);
+    }
+  }
+
   return lines.join('\n');
 }
 
@@ -473,6 +510,11 @@ export function generateGitHubBackupFiles(source: BackupSource): GeneratedFile[]
       path: 'data/revisions.json',
       content: JSON.stringify(source.revisions, null, 2),
       description: `${source.revisions.length} revision records`,
+    },
+    {
+      path: 'data/quizzes.json',
+      content: JSON.stringify(source.quizzes, null, 2),
+      description: `${source.quizzes.length} practice attempts`,
     },
     {
       path: 'data/settings.json',
@@ -556,5 +598,6 @@ export function importCounts(payload: BackupPayload): string {
     `${payload.notes.length} notes`,
     `${payload.sessions.length} sessions`,
     `${payload.revisions.length} revisions`,
+    `${payload.quizzes?.length ?? 0} practice rounds`,
   ].join(' · ');
 }

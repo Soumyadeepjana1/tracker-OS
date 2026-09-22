@@ -19,6 +19,8 @@ import {
 } from '@/components/ui/primitives';
 import { Field, Input, Select } from '@/components/ui/form';
 import { SessionDialog } from '@/features/shared/SessionDialog';
+import { FocusMode } from '@/features/timer/FocusMode';
+import { useQueryFlag } from '@/lib/hooks';
 import {
   IconCheck,
   IconClock,
@@ -28,6 +30,7 @@ import {
   IconPlus,
   IconReset,
   IconStop,
+  IconTarget,
   IconTimer,
   IconTrash,
 } from '@/components/icons';
@@ -37,6 +40,9 @@ export function TimerPage() {
   const timer = useTimer();
   const [sessionOpen, setSessionOpen] = useState(false);
   const [customMinutes, setCustomMinutes] = useState(15);
+  // `?focus=1` opens the distraction-free overlay, so any entry point (command
+  // palette, dashboard HUD, deep link) can launch it with a plain URL.
+  const [focusParam, setFocusParam] = useQueryFlag('focus');
   const handledCompletion = useRef(timer.completionCount);
 
   const today = todayISO();
@@ -70,10 +76,21 @@ export function TimerPage() {
         title="Study timer"
         description="Pomodoro-style focus blocks. When the timer finishes, log what you studied and it feeds your streak and analytics."
         actions={
-          <Button variant="secondary" icon={<IconPlus size={15} />} onClick={() => setSessionOpen(true)}>
-            Log time manually
-          </Button>
+          <>
+            <Button variant="primary" icon={<IconTarget size={15} />} onClick={() => setFocusParam('1')}>
+              Focus mode
+            </Button>
+            <Button variant="secondary" icon={<IconPlus size={15} />} onClick={() => setSessionOpen(true)}>
+              Log time manually
+            </Button>
+          </>
         }
+      />
+
+      <FocusMode
+        open={focusParam === '1'}
+        onClose={() => setFocusParam(undefined)}
+        onCompleted={() => setSessionOpen(true)}
       />
 
       <div className="grid gap-4 xl:grid-cols-3">

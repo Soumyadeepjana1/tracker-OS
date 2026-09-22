@@ -1,29 +1,44 @@
 name: Deploy to GitHub Pages
 
-# DevOps Learning OS is a 100% client-side application: this workflow only needs
-# to install dependencies, build the static bundle and publish it. There is no
-# server, database or runtime secret involved.
+# Automatic deployment pipeline.
+#
+#   git push origin main
+#        ↓  install → lint → type-check → smoke test → build
+#        ↓  upload the static bundle
+#        ↓  publish to GitHub Pages
+#
+# DevOps Learning OS is a 100% client-side app: no server, database or runtime
+# secret is involved, and no token ever reaches the browser bundle.
+#
+# If any step fails the job stops *before* anything is published, so the last
+# working version stays live on GitHub Pages.
 
 on:
   push:
     branches: [main, master]
+  # Manual re-deploy from the Actions tab (Actions → Deploy to GitHub Pages → Run workflow).
   workflow_dispatch:
 
+# Least privilege: `contents: read` to read the repo, Pages/id-token to publish.
 permissions:
   contents: read
   pages: write
   id-token: write
 
+# One deployment at a time; a newer push supersedes an in-flight one.
 concurrency:
   group: github-pages
   cancel-in-progress: true
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1 — validate. Nothing is published unless every gate passes.
+  # ---------------------------------------------------------------------------
   build:
-    name: Build static bundle
+    name: Verify & build
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Node.js
@@ -35,30 +50,60 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Type-check and build
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      # The browser-level test drives the real production bundle. GitHub's
+      # ubuntu runners ship Chrome; if a runner ever does not, the step says so
+      # and skips instead of failing the build.
+      - name: End-to-end smoke test
+        run: |
+          if command -v google-chrome >/dev/null 2>&1 || command -v chromium >/dev/null 2>&1 || command -v chromium-browser >/dev/null 2>&1; then
+            npm run test:smoke
+          else
+            echo "No Chrome on this runner — skipping the browser smoke test."
+          fi
+
+      # `npm run build` runs tsc --noEmit and emits dist/ *and* dist/version.json.
+      # The build metadata is injected from the standard GitHub variables:
+      # GITHUB_SHA, GITHUB_REF_NAME and GITHUB_REPOSITORY.
+      - name: Build production bundle
         run: npm run build
 
-      # GitHub Pages runs Jekyll by default, which ignores files beginning with
-      # an underscore. `.nojekyll` disables that so hashed asset paths are served.
-      - name: Disable Jekyll
+      - name: Report build version
+        run: |
+          echo "### Build \`v$(node -p "require('./package.json').version")\`" >> "$GITHUB_STEP_SUMMARY"
+          echo '```json' >> "$GITHUB_STEP_SUMMARY"
+          cat dist/version.json >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      # GitHub Pages runs Jekyll by default, which ignores paths beginning with
+      # an underscore. `.nojekyll` disables that so hashed assets are served.
+      - name: Disable Jekyll processing
         run: touch dist/.nojekyll
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
 
+  # ---------------------------------------------------------------------------
+  # Stage 2 — publish the artifact produced above.
+  # ---------------------------------------------------------------------------
   deploy:
-    name: Deploy
+    name: Deploy to GitHub Pages
     needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Deploy to GitHub Pages
+      - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4

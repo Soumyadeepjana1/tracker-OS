@@ -20,6 +20,7 @@ import {
   type Tone,
 } from '@/components/ui/primitives';
 import { ActivityHeatmap, AreaChart, BarChart, DonutChart } from '@/components/charts';
+import { MissionControl } from '@/features/dashboard/MissionControl';
 import { SessionDialog } from '@/features/shared/SessionDialog';
 import { TaskDialog } from '@/features/shared/TaskDialog';
 import { RevisionDialog } from '@/features/shared/RevisionDialog';
@@ -98,6 +99,9 @@ export function DashboardPage() {
           </>
         }
       />
+
+      {/* --------------------------- mission control --------------------------- */}
+      <MissionControl />
 
       {/* ------------------------------ headline ------------------------------ */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">

@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import type {
   ChatMessage,
   Course,
+  DeploymentState,
   GitHubRepo,
   GitHubState,
   Note,
@@ -25,6 +26,13 @@ import {
   type BackupSource,
 } from '@/lib/backup';
 import { fetchEvents, fetchRepositories, GitHubError } from '@/lib/github';
+import {
+  deploymentConfigHint,
+  loadDeployment,
+  resolveDeploymentTarget,
+  summarizeRuns,
+} from '@/lib/deploy';
+import { recordDeployment, type DeploymentRecord } from '@/lib/version';
 import { DEFAULT_SETTINGS, applyTheme, loadSettings, mergeSettings, saveSettings } from './defaults';
 
 export type ToastTone = 'info' | 'ok' | 'warn' | 'danger';
@@ -60,6 +68,10 @@ export interface AppState {
   revisions: RevisionRecord[];
   settings: Settings;
   github: GitHubState;
+  /** Live CI/CD state for the repository that hosts this app. */
+  deployment: DeploymentState;
+  /** When this exact build first appeared on this device. */
+  deployRecord: DeploymentRecord | null;
   chat: ChatMessage[];
   toasts: ToastMessage[];
   confirm: ConfirmRequest | null;
@@ -77,6 +89,51 @@ function emptyGitHubState(username: string): GitHubState {
     error: null,
     lastFetchedAt: null,
   };
+}
+
+const DEPLOYMENT_CACHE_KEY = 'devops-os:deployment';
+/** Deployment status is cached so reloads do not burn the 60/hour API budget. */
+const DEPLOYMENT_CACHE_TTL = 10 * 60 * 1000;
+
+function emptyDeploymentState(): DeploymentState {
+  return {
+    status: 'idle',
+    error: null,
+    repo: null,
+    branch: 'main',
+    source: 'none',
+    info: null,
+    runs: [],
+    lastStatus: 'unknown',
+    lastDeployedAt: null,
+    lastCheckedAt: null,
+  };
+}
+
+function readCachedDeployment(): DeploymentState | null {
+  try {
+    const raw = localStorage.getItem(DEPLOYMENT_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<DeploymentState>;
+    if (!parsed || !parsed.repo) return null;
+    return {
+      ...emptyDeploymentState(),
+      ...parsed,
+      status: 'ready',
+      error: null,
+      runs: Array.isArray(parsed.runs) ? parsed.runs : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedDeployment(state: DeploymentState): void {
+  try {
+    localStorage.setItem(DEPLOYMENT_CACHE_KEY, JSON.stringify({ ...state, error: null }));
+  } catch {
+    /* storage unavailable — status is simply refetched next time */
+  }
 }
 
 class Store {
@@ -100,6 +157,8 @@ class Store {
       revisions: [],
       settings,
       github: emptyGitHubState(settings.githubUsername),
+      deployment: readCachedDeployment() ?? emptyDeploymentState(),
+      deployRecord: null,
       chat: [],
       toasts: [],
       confirm: null,
@@ -167,9 +226,14 @@ class Store {
         persistenceWarning: getStorageWarning(),
       });
 
+      // Remember which build is running so "last deployment" works even when
+      // GitHub is unreachable or rate limited.
+      this.set({ deployRecord: recordDeployment() });
+
       if (this.state.settings.githubUsername) {
         void this.refreshGitHub({ silent: true });
       }
+      void this.refreshDeployment({ silent: true });
     } catch (error) {
       console.error('[devops-os] boot failed', error);
       this.set({
@@ -530,6 +594,14 @@ class Store {
     if (patch.githubUsername !== undefined && patch.githubUsername !== this.state.github.username) {
       this.set({ github: { ...this.state.github, username: settings.githubUsername } });
     }
+    // Repository/branch changes invalidate the cached CI status.
+    if (
+      patch.githubRepo !== undefined ||
+      patch.githubBranch !== undefined ||
+      patch.githubUsername !== undefined
+    ) {
+      void this.refreshDeployment({ silent: true, force: true });
+    }
   }
 
   async resetSettings(): Promise<void> {
@@ -623,6 +695,95 @@ class Store {
 
   clearChat(): void {
     this.set({ chat: [] });
+  }
+
+  /* -------------------------------- CI/CD ----------------------------- */
+
+  /**
+   * Loads deployment/CI status from the **public** GitHub API.
+   *
+   * Never throws: failures are stored as a friendly message and the previously
+   * known snapshot is kept, so the dashboard keeps working with no internet.
+   */
+  async refreshDeployment(options: { silent?: boolean; force?: boolean } = {}): Promise<void> {
+    const settings = this.state.settings;
+    const target = resolveDeploymentTarget(settings);
+
+    if (!target) {
+      this.set({
+        deployment: {
+          ...emptyDeploymentState(),
+          branch: settings.githubBranch || 'main',
+          error: deploymentConfigHint(settings),
+          status: 'error',
+        },
+      });
+      return;
+    }
+
+    const cached = this.state.deployment;
+    const cachedIsFresh =
+      cached.status === 'ready' &&
+      cached.lastCheckedAt !== null &&
+      Date.now() - Date.parse(cached.lastCheckedAt) < DEPLOYMENT_CACHE_TTL;
+
+    // Cached-and-fresh: only refresh when explicitly asked.
+    if (!options.force && cachedIsFresh && cached.repo === target.slug) return;
+
+    this.set({
+      deployment: { ...cached, status: 'loading', error: null, repo: target.slug, branch: target.branch, source: target.ref.source },
+    });
+
+    const result = await loadDeployment(target);
+
+    if (!result.ok) {
+      const next: DeploymentState = {
+        ...this.state.deployment,
+        status: 'error',
+        error: result.error,
+        repo: target.slug,
+        branch: target.branch,
+        lastCheckedAt: new Date().toISOString(),
+      };
+      this.set({ deployment: next });
+      if (!options.silent) this.toast({ title: 'Deployment status unavailable', message: result.error, tone: 'warn' });
+      return;
+    }
+
+    const { info, runs, status, lastDeployedAt } = result.snapshot;
+    const next: DeploymentState = {
+      status: 'ready',
+      error: null,
+      repo: target.slug,
+      branch: target.branch,
+      source: target.ref.source,
+      info,
+      runs,
+      lastStatus: status,
+      lastDeployedAt,
+      lastCheckedAt: new Date().toISOString(),
+    };
+
+    writeCachedDeployment(next);
+    this.set({ deployment: next });
+
+    if (!options.silent) {
+      this.toast({
+        title: `Deployment status: ${status}`,
+        message: `${info.fullName} · ${runs.length} recent workflow run(s)`,
+        tone: status === 'failed' ? 'danger' : status === 'success' ? 'ok' : 'info',
+      });
+    }
+  }
+
+  /** Deployment view used by the AI assistant and the search index. */
+  deploymentSummary(): string {
+    const { deployment } = this.state;
+    if (deployment.status === 'ready' && deployment.info) {
+      const summary = summarizeRuns(deployment.runs, deployment.branch);
+      return `${deployment.info.fullName} · ${summary.status} · checked ${deployment.lastCheckedAt ?? 'never'}`;
+    }
+    return deployment.error ?? 'Deployment status unavailable.';
   }
 
   /* --------------------------------- data ---------------------------- */

@@ -5,6 +5,7 @@ import { computeAnalytics } from '@/lib/analytics';
 import { store, useApp } from '@/store/store';
 import { Badge, ProgressBar } from '@/components/ui/primitives';
 import { IconFlame, IconTerminal } from '@/components/icons';
+import { VERSION_LABEL } from '@/lib/version';
 import { useMemo } from 'react';
 
 export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
@@ -22,7 +23,7 @@ export function Sidebar({ onNavigate }: { onNavigate?: () => void }) {
         </span>
         <div className="min-w-0">
           <p className="truncate text-[13.5px] font-semibold leading-tight text-fg">DevOps Learning OS</p>
-          <p className="truncate text-[11px] text-fg-subtle">local-first · v1.0</p>
+          <p className="truncate font-mono text-[11px] text-fg-subtle">local-first · {VERSION_LABEL}</p>
         </div>
       </div>
 

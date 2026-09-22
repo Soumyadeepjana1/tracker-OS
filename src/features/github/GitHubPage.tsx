@@ -16,8 +16,10 @@ import {
 } from '@/components/ui/primitives';
 import { Field, FilterToggle, Input, SearchInput, Select } from '@/components/ui/form';
 import { DonutChart } from '@/components/charts';
+import { CicdCard } from '@/features/deployment/DeploymentPanel';
 import {
   IconAlert,
+  IconBranch,
   IconExternalLink,
   IconFork,
   IconGithub,
@@ -36,6 +38,8 @@ export function GitHubPage() {
   const [sort, setSort] = useState<SortKey>('updated');
   const [hideForks, setHideForks] = useState(true);
   const [usernameDraft, setUsernameDraft] = useState(settings.githubUsername);
+  const [repoDraft, setRepoDraft] = useState(settings.githubRepo);
+  const [branchDraft, setBranchDraft] = useState(settings.githubBranch);
 
   const languages = useMemo(
     () => Array.from(new Set(github.repositories.map((repo) => repo.language))).sort(),
@@ -84,6 +88,11 @@ export function GitHubPage() {
     if (usernameError) return;
     await store.updateSettings({ githubUsername: usernameDraft.trim() });
     await store.refreshGitHub();
+  };
+
+  const saveDeploymentTarget = async () => {
+    await store.updateSettings({ githubRepo: repoDraft.trim(), githubBranch: branchDraft.trim() || 'main' });
+    await store.refreshDeployment({ force: true });
   };
 
   return (
@@ -141,6 +150,35 @@ export function GitHubPage() {
           </span>
         </div>
       </Card>
+
+      <Card className="flex flex-wrap items-end gap-3">
+        <Field
+          label="Deployment repository"
+          hint="owner/name — leave empty to auto-detect it from the GitHub Pages URL."
+          className="min-w-56 flex-1"
+        >
+          <Input
+            value={repoDraft}
+            placeholder={settings.githubUsername ? `${settings.githubUsername}/devops-learning-os` : 'owner/repository'}
+            onChange={(event) => setRepoDraft(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter') void saveDeploymentTarget();
+            }}
+          />
+        </Field>
+        <Field label="Branch" hint="Your deployment workflow's branch." className="w-full sm:w-40">
+          <Input
+            value={branchDraft}
+            placeholder="main"
+            onChange={(event) => setBranchDraft(event.target.value)}
+          />
+        </Field>
+        <Button variant="secondary" icon={<IconBranch size={15} />} onClick={() => void saveDeploymentTarget()}>
+          Save &amp; check CI/CD
+        </Button>
+      </Card>
+
+      <CicdCard />
 
       {github.status === 'error' ? (
         <Card className="border-warn/40 bg-warn-soft">

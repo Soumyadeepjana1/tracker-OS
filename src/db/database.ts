@@ -13,7 +13,8 @@ import { openDB, type IDBPDatabase } from 'idb';
  */
 
 export const DB_NAME = 'devops-learning-os';
-export const DB_VERSION = 1;
+/** v2 added the `quizzes` store; the upgrade creates any missing store. */
+export const DB_VERSION = 2;
 
 export const COLLECTIONS = [
   'courses',
@@ -23,6 +24,7 @@ export const COLLECTIONS = [
   'notes',
   'sessions',
   'revisions',
+  'quizzes',
 ] as const;
 
 export type CollectionName = (typeof COLLECTIONS)[number];

@@ -5,9 +5,11 @@ import { Topbar } from './Topbar';
 import { CommandPalette } from './CommandPalette';
 import { ErrorBoundary } from './ErrorBoundary';
 import { ConfirmDialog, Toaster } from '@/components/ui/overlay';
+import { AuroraBackground } from '@/components/effects';
 import { Button, Card, Skeleton } from '@/components/ui/primitives';
 import { IconAlert, IconClose, IconDatabase } from '@/components/icons';
 import { useApp } from '@/store/store';
+import { VersionBadge } from '@/features/deployment/DeploymentPanel';
 import { cn } from '@/lib/utils';
 
 export function AppLayout() {
@@ -62,7 +64,10 @@ export function AppLayout() {
   }
 
   return (
-    <div className="flex min-h-dvh">
+    <div className="relative flex min-h-dvh">
+      {/* Ambient HUD background — decorative only, skipped for reduced motion. */}
+      <AuroraBackground />
+
       <div className="sticky top-0 hidden h-dvh lg:block">
         <Sidebar />
       </div>
@@ -111,7 +116,10 @@ export function AppLayout() {
               ? `All changes saved locally · ${new Date(state.lastSavedAt).toLocaleTimeString()}`
               : 'All data lives in your browser — no server, no account.'}
           </span>
-          <span>DevOps Learning OS · client-side only</span>
+          <span className="flex items-center gap-2">
+            DevOps Learning OS · client-side only
+            <VersionBadge />
+          </span>
         </footer>
       </div>
 

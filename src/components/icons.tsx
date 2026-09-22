@@ -290,6 +290,28 @@ export const IconBookOpen = make(
     <path d="M12 6.5v13" />
   </>,
 );
+export const IconRocket = make(
+  <>
+    <path d="M13.5 3.5c3.5-1.5 7 2 5.5 5.5-1.3 3-4.5 6-7.5 7.5l-3.5-3.5c1.5-3 4.5-6.2 5.5-9.5z" />
+    <path d="m8.5 13-3.5 1-1.5 4 4-1.5 1-3.5z" />
+    <circle cx="14.5" cy="9.5" r="1.4" />
+    <path d="M17.5 14.5 16 18l-3.5 1.5 1-3.5z" />
+  </>,
+);
+export const IconBranch = make(
+  <>
+    <circle cx="6.5" cy="5" r="2.2" />
+    <circle cx="6.5" cy="19" r="2.2" />
+    <circle cx="17.5" cy="9" r="2.2" />
+    <path d="M6.5 7.2v9.6M15.3 9.6c-1.6.6-3.2.8-4.6.9" />
+  </>,
+);
+export const IconTag = make(
+  <>
+    <path d="M11 3.5H4.5a1 1 0 0 0-1 1V11l9.6 9.6a1.5 1.5 0 0 0 2.1 0l6-6a1.5 1.5 0 0 0 0-2.1z" />
+    <circle cx="7.6" cy="7.6" r="1.2" />
+  </>,
+);
 export const IconBrain = make(
   <>
     <path d="M9.5 3.5A3 3 0 0 0 6.5 6.5 3 3 0 0 0 4 9.5 3 3 0 0 0 5.5 12 3 3 0 0 0 4 14.5a3 3 0 0 0 2.5 3 3 3 0 0 0 3 3 1.5 1.5 0 0 0 1.5-1.5v-14a1.5 1.5 0 0 0-1.5-1.5z" />

@@ -176,6 +176,31 @@ export interface RevisionRecord {
   notes: string;
 }
 
+/* ------------------------- practice / quiz mode ----------------------- */
+
+export type QuizMode = 'auto' | 'recall';
+
+/**
+ * One completed practice round.
+ *
+ * Attempts are persisted so the trainer can show a score trend and so missed
+ * questions can be pushed straight back into the revision queue.
+ */
+export interface QuizAttempt extends Timestamped {
+  id: ID;
+  date: ISODate;
+  mode: QuizMode;
+  /** Subject filter used for the round, or `All subjects`. */
+  subject: string;
+  total: number;
+  correct: number;
+  /** 0–100. */
+  score: number;
+  durationSeconds: number;
+  /** Topic names answered incorrectly (or rated low in recall mode). */
+  missed: string[];
+}
+
 /* ------------------------------ AI messages --------------------------- */
 
 export type ChatRole = 'user' | 'assistant' | 'system' | 'tool';
@@ -222,6 +247,10 @@ export interface AISettings {
 export interface Settings {
   name: string;
   githubUsername: string;
+  /** Repository that hosts this app, as `owner/name` (or a bare name). */
+  githubRepo: string;
+  /** Branch the deployment workflow listens on. */
+  githubBranch: string;
   dailyStudyTargetMinutes: number;
   weeklyStudyTargetMinutes: number;
   targetJobDate: ISODate;
@@ -271,6 +300,52 @@ export interface GitHubState {
   status: 'idle' | 'loading' | 'ready' | 'error';
   error: string | null;
   lastFetchedAt: ISODateTime | null;
+}
+
+/* -------------------------------- CI/CD -------------------------------- */
+
+/** Result of the most recent deployment workflow run. */
+export type DeploymentStatus = 'unknown' | 'queued' | 'running' | 'success' | 'failed' | 'cancelled';
+
+export interface WorkflowRun {
+  id: number;
+  name: string;
+  /** Raw GitHub status: `queued` · `in_progress` · `completed`. */
+  status: string;
+  /** Raw conclusion: `success` · `failure` · `cancelled` · … */
+  conclusion: string | null;
+  branch: string;
+  event: string;
+  commit: string;
+  message: string;
+  updatedAt: ISODateTime;
+  url: string;
+}
+
+export interface RepoInfo {
+  fullName: string;
+  description: string;
+  defaultBranch: string;
+  homepage: string;
+  url: string;
+  pushedAt: ISODateTime;
+  stars: number;
+  archived: boolean;
+}
+
+export interface DeploymentState {
+  status: 'idle' | 'loading' | 'ready' | 'error';
+  error: string | null;
+  /** `owner/name`, or null when the repository is not known yet. */
+  repo: string | null;
+  branch: string;
+  /** Where the repository identity came from. */
+  source: 'build' | 'url' | 'settings' | 'none';
+  info: RepoInfo | null;
+  runs: WorkflowRun[];
+  lastStatus: DeploymentStatus;
+  lastDeployedAt: ISODateTime | null;
+  lastCheckedAt: ISODateTime | null;
 }
 
 /* ------------------------------ analytics ----------------------------- */
@@ -323,6 +398,8 @@ export interface BackupPayload {
   notes: Note[];
   sessions: StudySession[];
   revisions: RevisionRecord[];
+  /** Optional so backups made before practice mode existed still import. */
+  quizzes?: QuizAttempt[];
   settings: Settings;
   meta?: Record<string, unknown>;
 }

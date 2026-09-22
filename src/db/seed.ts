@@ -6,6 +6,7 @@ import type {
   Lesson,
   Note,
   Project,
+  QuizAttempt,
   RevisionRecord,
   StudySession,
   StudyTask,
@@ -31,6 +32,7 @@ export interface SampleData {
   notes: Note[];
   sessions: StudySession[];
   revisions: RevisionRecord[];
+  quizzes: QuizAttempt[];
 }
 
 const now = () => new Date().toISOString();
@@ -945,6 +947,39 @@ function buildRevisions(): RevisionRecord[] {
   }));
 }
 
+/**
+ * A short practice history, shaped to show a believable upward score trend.
+ */
+function buildQuizzes(): QuizAttempt[] {
+  const today = todayISO();
+  const entries: [daysAgo: number, subject: string, total: number, correct: number, seconds: number][] = [
+    [16, 'All subjects', 10, 5, 420],
+    [13, 'Kubernetes', 8, 4, 360],
+    [11, 'All subjects', 10, 7, 390],
+    [8, 'Docker', 6, 5, 250],
+    [5, 'Terraform', 8, 6, 330],
+    [3, 'All subjects', 12, 9, 480],
+    [1, 'Kubernetes', 10, 8, 400],
+  ];
+
+  return entries.map(([daysAgo, subject, total, correct, seconds]) => {
+    const timestamp = new Date(`${addDays(today, -daysAgo)}T18:30:00.000Z`).toISOString();
+    return {
+      id: uid('qiz'),
+      date: addDays(today, -daysAgo),
+      mode: 'auto' as const,
+      subject,
+      total,
+      correct,
+      score: Math.round((correct / total) * 100),
+      durationSeconds: seconds,
+      missed: correct === total ? [] : ['Kubernetes Service', 'Terraform State'].slice(0, total - correct),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+  });
+}
+
 export function createSampleData(): SampleData {
   return {
     courses: buildCourses(),
@@ -954,6 +989,7 @@ export function createSampleData(): SampleData {
     notes: buildNotes(),
     sessions: buildSessions(),
     revisions: buildRevisions(),
+    quizzes: buildQuizzes(),
   };
 }
 
@@ -966,5 +1002,6 @@ export function describeSampleData(data: SampleData): string {
     `${data.projects.length} projects`,
     `${data.notes.length} notes`,
     `${data.sessions.length} study sessions`,
+    `${data.quizzes.length} practice rounds`,
   ].join(' · ');
 }

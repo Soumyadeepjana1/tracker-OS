@@ -86,6 +86,16 @@ async function request<T>(path: string, signal?: AbortSignal, timeoutMs = 12_000
   }
 }
 
+/**
+ * Reusable GET against a public GitHub REST path.
+ *
+ * Exported so other features (repository metadata, Actions runs) can reuse the
+ * same unauthenticated, timeout-guarded, error-classified request path.
+ */
+export async function requestGitHub<T>(path: string, options: { timeoutMs?: number } = {}): Promise<T> {
+  return request<T>(path, undefined, options.timeoutMs);
+}
+
 interface RawRepo {
   id: number;
   name: string;

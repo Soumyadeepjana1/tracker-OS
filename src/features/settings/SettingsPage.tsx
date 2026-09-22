@@ -13,6 +13,7 @@ import { Badge, Button, IconButton, SectionCard, Segmented, StatCard } from '@/c
 import { Field, FormGrid, Input, Select } from '@/components/ui/form';
 import { Modal } from '@/components/ui/overlay';
 import { useQueryFlag } from '@/lib/hooks';
+import { DeploymentPanel, VersionBadge } from '@/features/deployment/DeploymentPanel';
 import {
   IconAlert,
   IconCheck,
@@ -31,13 +32,14 @@ import {
   IconUser,
 } from '@/components/icons';
 
-type Tab = 'profile' | 'learning' | 'appearance' | 'ai' | 'data';
+type Tab = 'profile' | 'learning' | 'appearance' | 'ai' | 'deployment' | 'data';
 
 const TAB_LABELS: { value: Tab; label: string }[] = [
   { value: 'profile', label: 'Profile' },
   { value: 'learning', label: 'Learning' },
   { value: 'appearance', label: 'Appearance' },
   { value: 'ai', label: 'AI provider' },
+  { value: 'deployment', label: 'Deployment' },
   { value: 'data', label: 'Data' },
 ];
 
@@ -83,7 +85,21 @@ export function SettingsPage() {
 
   const totalRecords = Object.values(counts).reduce((total, value) => total + value, 0);
 
-  const backupFiles = useMemo(() => generateGitHubBackupFiles(store.getBackupSource()), [backupOpen, state]);
+  // Recomputed whenever any exported collection changes — never on unrelated
+  // state updates such as toasts or hover state.
+  const backupFiles = useMemo(
+    () => generateGitHubBackupFiles(store.getBackupSource()),
+    [
+      state.courses,
+      state.topics,
+      state.tasks,
+      state.projects,
+      state.notes,
+      state.sessions,
+      state.revisions,
+      state.settings,
+    ],
+  );
 
   const handleImport = async (file: File) => {
     const text = await file.text();
@@ -131,7 +147,10 @@ export function SettingsPage() {
         title="Settings"
         description="Everything here is stored locally: settings in localStorage, application data in IndexedDB."
         actions={
-          <Segmented options={TAB_LABELS} value={tab} onChange={setTab} />
+          // Horizontally scrollable on phones so six tabs never break the layout.
+          <div className="-mx-1 w-full max-w-full overflow-x-auto px-1 pb-1 sm:w-auto">
+            <Segmented options={TAB_LABELS} value={tab} onChange={setTab} />
+          </div>
         }
       />
 
@@ -207,6 +226,10 @@ export function SettingsPage() {
               <li className="flex items-center justify-between">
                 <span className="text-fg-muted">Target date</span>
                 <span className="font-mono text-fg">{formatDate(settings.targetJobDate, 'short')}</span>
+              </li>
+              <li className="flex items-center justify-between">
+                <span className="text-fg-muted">Version</span>
+                <VersionBadge />
               </li>
               <li className="flex items-center justify-between">
                 <span className="text-fg-muted">Records stored</span>
@@ -580,6 +603,8 @@ Model    : llama3.1`}
           </div>
         </div>
       ) : null}
+
+      {tab === 'deployment' ? <DeploymentPanel /> : null}
 
       {tab === 'data' ? (
         <div className="flex flex-col gap-4">

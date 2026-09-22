@@ -107,6 +107,13 @@
   --animate-pop: pop 0.18s ease-out both;
   --animate-shimmer: shimmer 1.6s linear infinite;
   --animate-pulse-ring: pulse-ring 2.4s ease-out infinite;
+
+  /* Futuristic HUD layer ------------------------------------------------- */
+  --animate-aurora: aurora-drift 26s ease-in-out infinite alternate;
+  --animate-float: float-slow 7s ease-in-out infinite;
+  --animate-sweep: sweep 3.8s linear infinite;
+  --animate-confetti: confetti-fall 1.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  --animate-hud-in: hud-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes fade-in {
@@ -154,6 +161,76 @@
   }
   100% {
     box-shadow: 0 0 0 0 rgb(52 211 153 / 0);
+  }
+}
+
+@keyframes aurora-drift {
+  0% {
+    transform: translate3d(-6%, -4%, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(7%, 6%, 0) scale(1.14);
+  }
+  100% {
+    transform: translate3d(-4%, 3%, 0) scale(1.04);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes sweep {
+  0% {
+    transform: translateX(-70%);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translateX(170%);
+    opacity: 0;
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    opacity: 1;
+    transform: translate3d(0, -8px, 0) rotate(0deg) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--confetti-x, 0px), 130px, 0) rotate(var(--confetti-rot, 260deg)) scale(0.55);
+  }
+}
+
+@keyframes hud-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Accessibility: never animate for users who asked us not to. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
@@ -233,6 +310,44 @@
   border: 1px solid var(--line);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);
+}
+
+/* ---------------- futuristic HUD helpers ---------------- */
+
+/* Frosted panel used for the sticky shell and floating HUDs. */
+@utility glass-surface {
+  background-color: color-mix(in oklab, var(--surface) 80%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Mission-control panel: subtle brand/accent wash over a card. */
+@utility hud-panel {
+  position: relative;
+  overflow: hidden;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background-color: var(--surface);
+  background-image:
+    linear-gradient(140deg, color-mix(in oklab, var(--brand) 14%, transparent), transparent 44%),
+    linear-gradient(320deg, color-mix(in oklab, var(--accent) 14%, transparent), transparent 46%);
+  box-shadow: var(--shadow-card);
+}
+
+/* Faint engineering grid, faded out towards the bottom. */
+@utility hud-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--line-strong) 55%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--line-strong) 55%, transparent) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: radial-gradient(ellipse at 50% 0%, black, transparent 74%);
+}
+
+/* Soft coloured light source; position and size it inline. */
+@utility aurora-blob {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(70px);
+  will-change: transform;
 }
 
 @utility glass {
