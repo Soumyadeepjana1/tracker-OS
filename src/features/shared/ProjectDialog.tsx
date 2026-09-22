@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Project, ProjectStatus, ProjectTask } from '@/types';
 import { PROJECT_STATUS_META } from '@/types';
 import { store } from '@/store/store';
@@ -46,24 +46,20 @@ export function ProjectDialog({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const projectRef = useRef(project);
-  projectRef.current = project;
-
   useEffect(() => {
     if (!open) return;
-    const seed = projectRef.current;
-    setName(seed?.name ?? '');
-    setDescription(seed?.description ?? '');
-    setTechnologies(seed?.technologies ?? []);
-    setRepoUrl(seed?.repoUrl ?? '');
-    setStartDate(seed?.startDate ?? todayISO());
-    setTargetDate(seed?.targetDate ?? addDays(todayISO(), 30));
-    setStatus(seed?.status ?? 'planned');
-    setTasks(seed?.tasks ?? []);
+    setName(project?.name ?? '');
+    setDescription(project?.description ?? '');
+    setTechnologies(project?.technologies ?? []);
+    setRepoUrl(project?.repoUrl ?? '');
+    setStartDate(project?.startDate ?? todayISO());
+    setTargetDate(project?.targetDate ?? addDays(todayISO(), 30));
+    setStatus(project?.status ?? 'planned');
+    setTasks(project?.tasks ?? []);
     setNewTask('');
-    setNotes(seed?.notes ?? '');
+    setNotes(project?.notes ?? '');
     setError('');
-  }, [open]);
+  }, [open, project]);
 
   const addTask = () => {
     const title = newTask.trim();
@@ -94,8 +90,8 @@ export function ProjectDialog({
         tasks,
         notes,
       };
-      if (projectRef.current) {
-        await store.updateProject(projectRef.current.id, payload);
+      if (project) {
+        await store.updateProject(project.id, payload);
         store.toast({ title: 'Project updated', message: name.trim(), tone: 'ok' });
       } else {
         await store.addProject(payload);

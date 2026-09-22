@@ -155,7 +155,7 @@ export function FocusMode({
             size="lg"
             icon={<IconCheck size={16} />}
             onClick={() => {
-              if (timer.elapsedMinutes() >= 1) onCompleted();
+              if (timerStore.elapsedMinutes() >= 1) onCompleted();
               timerStore.reset();
               onClose();
             }}

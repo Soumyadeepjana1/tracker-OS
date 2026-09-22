@@ -49,9 +49,12 @@ export function TopicsPage() {
 
   useEffect(() => {
     if (newParam === 'topic') {
-      setEditing(null);
-      setDialogOpen(true);
-      setNewParam(undefined);
+      const timer = setTimeout(() => {
+        setEditing(null);
+        setDialogOpen(true);
+        setNewParam(undefined);
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [newParam, setNewParam]);
 
@@ -59,10 +62,15 @@ export function TopicsPage() {
     if (!focusParam) return;
     const topic = state.topics.find((entry) => entry.id === focusParam);
     if (topic) {
-      setEditing(topic);
-      setDialogOpen(true);
+      const timer = setTimeout(() => {
+        setEditing(topic);
+        setDialogOpen(true);
+        setFocusParam(undefined);
+      }, 0);
+      return () => clearTimeout(timer);
+    } else {
+      setFocusParam(undefined);
     }
-    setFocusParam(undefined);
   }, [focusParam, state.topics, setFocusParam]);
 
   const today = todayISO();

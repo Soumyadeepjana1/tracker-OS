@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Priority, StudyTask, TaskStatus } from '@/types';
 import { PRIORITIES, PRIORITY_META, STUDY_SUBJECTS, TASK_STATUSES, TASK_STATUS_META } from '@/types';
 import { store, useApp } from '@/store/store';
@@ -53,16 +53,11 @@ export function TaskDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
-  // Keeps the seed values stable while the dialog is open, even when the parent
-  // re-renders and passes a brand new `defaults` object literal.
-  const defaultsRef = useRef(defaults);
-  defaultsRef.current = defaults;
-
   useEffect(() => {
     if (!open) return;
-    setValues(task ? emptyTask(task) : emptyTask(defaultsRef.current));
+    setValues(task ? emptyTask(task) : emptyTask(defaults));
     setErrors({});
-  }, [open, task]);
+  }, [open, task, defaults]);
 
   const set = <K extends keyof TaskFormValues>(key: K, value: TaskFormValues[K]) =>
     setValues((current) => ({ ...current, [key]: value }));

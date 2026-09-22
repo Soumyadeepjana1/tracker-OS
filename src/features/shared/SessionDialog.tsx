@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { StudyTask, TimerMode } from '@/types';
 import { STUDY_SUBJECTS } from '@/types';
 import { store, useApp } from '@/store/store';
@@ -39,21 +39,17 @@ export function SessionDialog({
   const [completeTask, setCompleteTask] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const defaultsRef = useRef(defaults);
-  defaultsRef.current = defaults;
-
   useEffect(() => {
     if (!open) return;
-    const seed = defaultsRef.current;
-    setMinutes(seed?.minutes ?? 25);
-    setSubject(seed?.subject ?? 'DevOps');
-    setTopic(seed?.topic ?? '');
-    setNotes(seed?.notes ?? '');
-    setTaskId(seed?.taskId ?? '');
-    setCompleteTask(Boolean(seed?.taskId));
-  }, [open]);
+    setMinutes(defaults?.minutes ?? 25);
+    setSubject(defaults?.subject ?? 'DevOps');
+    setTopic(defaults?.topic ?? '');
+    setNotes(defaults?.notes ?? '');
+    setTaskId(defaults?.taskId ?? '');
+    setCompleteTask(Boolean(defaults?.taskId));
+  }, [open, defaults]);
 
-  const mode = defaultsRef.current?.mode ?? 'custom';
+  const mode = defaults?.mode ?? 'custom';
 
   const todayTasks = tasks.filter((task) => task.status !== 'completed').slice(0, 40);
 

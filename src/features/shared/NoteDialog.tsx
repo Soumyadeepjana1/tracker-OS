@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Note } from '@/types';
 import { store, useApp } from '@/store/store';
 import { Modal } from '@/components/ui/overlay';
@@ -45,12 +45,9 @@ export function NoteDialog({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const defaultsRef = useRef(defaults);
-  defaultsRef.current = defaults;
-
   useEffect(() => {
     if (!open) return;
-    const source = note ?? defaultsRef.current;
+    const source = note ?? defaults;
     setTitle(source?.title ?? '');
     setTopic(source?.topic ?? '');
     setTags(source?.tags ?? []);
@@ -59,7 +56,7 @@ export function NoteDialog({
     setArchived(source?.archived ?? false);
     setTab('write');
     setError('');
-  }, [open, note]);
+  }, [open, note, defaults]);
 
   const html = useMemo(() => renderMarkdown(content), [content]);
   const tagSuggestions = useMemo(

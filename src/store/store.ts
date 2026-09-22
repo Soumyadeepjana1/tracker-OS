@@ -7,6 +7,7 @@ import type {
   GitHubState,
   Note,
   Project,
+  QuizAttempt,
   RevisionRecord,
   Settings,
   StudySession,
@@ -66,6 +67,7 @@ export interface AppState {
   notes: Note[];
   sessions: StudySession[];
   revisions: RevisionRecord[];
+  quizzes: QuizAttempt[];
   settings: Settings;
   github: GitHubState;
   /** Live CI/CD state for the repository that hosts this app. */
@@ -155,6 +157,7 @@ class Store {
       notes: [],
       sessions: [],
       revisions: [],
+      quizzes: [],
       settings,
       github: emptyGitHubState(settings.githubUsername),
       deployment: readCachedDeployment() ?? emptyDeploymentState(),
@@ -196,7 +199,7 @@ class Store {
       await storage.init();
 
       const readCollections = async () => {
-        const [courses, topics, tasks, projects, notes, sessions, revisions] = await Promise.all([
+        const [courses, topics, tasks, projects, notes, sessions, revisions, quizzes] = await Promise.all([
           storage.getAll<Course>('courses'),
           storage.getAll<Topic>('topics'),
           storage.getAll<StudyTask>('tasks'),
@@ -204,8 +207,9 @@ class Store {
           storage.getAll<Note>('notes'),
           storage.getAll<StudySession>('sessions'),
           storage.getAll<RevisionRecord>('revisions'),
+          storage.getAll<QuizAttempt>('quizzes'),
         ]);
-        return { courses, topics, tasks, projects, notes, sessions, revisions };
+        return { courses, topics, tasks, projects, notes, sessions, revisions, quizzes };
       };
 
       let collections = await readCollections();
@@ -797,8 +801,24 @@ class Store {
       notes: this.state.notes,
       sessions: this.state.sessions,
       revisions: this.state.revisions,
+      quizzes: this.state.quizzes,
       settings: this.state.settings,
     };
+  }
+
+  async addQuizAttempt(
+    attempt: Omit<QuizAttempt, 'id' | 'createdAt' | 'updatedAt'>,
+  ): Promise<QuizAttempt> {
+    const timestamp = nowIso();
+    const record: QuizAttempt = {
+      id: uid('qz'),
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      ...attempt,
+    };
+    await storage.put('quizzes', record);
+    this.set({ quizzes: [record, ...this.state.quizzes], lastSavedAt: timestamp });
+    return record;
   }
 
   exportBackup(): string {
@@ -829,6 +849,7 @@ class Store {
     const notes = merge(this.state.notes, payload.notes);
     const sessions = merge(this.state.sessions, payload.sessions);
     const revisions = merge(this.state.revisions, payload.revisions);
+    const quizzes = merge(this.state.quizzes, payload.quizzes ?? []);
 
     const settings = mergeSettings(this.state.settings, { ...payload.settings, seededFromSample: true });
     saveSettings(settings);
@@ -843,6 +864,7 @@ class Store {
         notes,
         sessions,
         revisions,
+        quizzes,
       });
     } catch (error) {
       console.error('[devops-os] import persistence failed', error);
@@ -857,11 +879,12 @@ class Store {
       notes,
       sessions,
       revisions,
+      quizzes,
       settings,
       lastSavedAt: nowIso(),
     });
 
-    const summary = `${payload.courses.length} courses, ${payload.topics.length} topics, ${payload.tasks.length} tasks, ${payload.projects.length} projects, ${payload.notes.length} notes, ${payload.sessions.length} sessions`;
+    const summary = `${payload.courses.length} courses, ${payload.topics.length} topics, ${payload.tasks.length} tasks, ${payload.projects.length} projects, ${payload.notes.length} notes, ${payload.sessions.length} sessions, ${quizzes.length} practice attempts`;
     return { ok: true, summary };
   }
 
@@ -876,6 +899,7 @@ class Store {
         notes: sample.notes,
         sessions: sample.sessions,
         revisions: sample.revisions,
+        quizzes: sample.quizzes,
       });
     } catch (error) {
       console.error('[devops-os] failed to store sample data', error);
@@ -889,6 +913,7 @@ class Store {
       notes: sample.notes,
       sessions: sample.sessions,
       revisions: sample.revisions,
+      quizzes: sample.quizzes,
       lastSavedAt: nowIso(),
     });
     await this.updateSettings({ seededFromSample: true });
@@ -912,6 +937,7 @@ class Store {
     if (collection === 'notes') patch.notes = [];
     if (collection === 'sessions') patch.sessions = [];
     if (collection === 'revisions') patch.revisions = [];
+    if (collection === 'quizzes') patch.quizzes = [];
     this.set({ ...patch, lastSavedAt: nowIso() });
   }
 
@@ -934,6 +960,7 @@ class Store {
       notes: [],
       sessions: [],
       revisions: [],
+      quizzes: [],
       chat: [],
       github: emptyGitHubState(''),
       settings: { ...DEFAULT_SETTINGS, seededFromSample: true },

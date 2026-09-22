@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Course, CourseStatus } from '@/types';
 import { COURSE_STATUS_META, STUDY_SUBJECTS } from '@/types';
 import { store, useApp } from '@/store/store';
@@ -28,25 +28,21 @@ export function CourseDialog({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const courseRef = useRef(course);
-  courseRef.current = course;
-
   useEffect(() => {
     if (!open) return;
-    const seed = courseRef.current;
-    setName(seed?.name ?? '');
-    setInstructor(seed?.instructor ?? '');
-    setPlatform(seed?.platform ?? '');
-    setUrl(seed?.url ?? '');
-    setCategory(seed?.category ?? 'DevOps');
-    setStatus(seed?.status ?? 'in-progress');
-    setTotalModules(seed?.totalModules ?? 10);
-    setCompletedModules(seed?.completedModules ?? 0);
-    setNotes(seed?.notes ?? '');
+    setName(course?.name ?? '');
+    setInstructor(course?.instructor ?? '');
+    setPlatform(course?.platform ?? '');
+    setUrl(course?.url ?? '');
+    setCategory(course?.category ?? 'DevOps');
+    setStatus(course?.status ?? 'in-progress');
+    setTotalModules(course?.totalModules ?? 10);
+    setCompletedModules(course?.completedModules ?? 0);
+    setNotes(course?.notes ?? '');
     setError('');
-  }, [open]);
+  }, [open, course]);
 
-  const hasModules = (courseRef.current?.modules.length ?? 0) > 0;
+  const hasModules = (course?.modules.length ?? 0) > 0;
   const platforms = Array.from(new Set(courses.map((entry) => entry.platform).filter(Boolean))).slice(0, 8);
 
   const submit = async () => {
@@ -71,8 +67,8 @@ export function CourseDialog({
         completedModules,
         notes,
       };
-      if (courseRef.current) {
-        await store.updateCourse(courseRef.current.id, payload);
+      if (course) {
+        await store.updateCourse(course.id, payload);
         store.toast({ title: 'Course updated', message: name.trim(), tone: 'ok' });
       } else {
         await store.addCourse(payload);

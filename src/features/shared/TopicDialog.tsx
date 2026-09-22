@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Confidence, Difficulty, Topic, TopicStatus } from '@/types';
 import { DIFFICULTY_META, TOPIC_CATEGORIES, TOPIC_STATUS_META } from '@/types';
 import { store, useApp } from '@/store/store';
@@ -33,26 +33,22 @@ export function TopicDialog({
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const topicRef = useRef(topic);
-  topicRef.current = topic;
-
   useEffect(() => {
     if (!open) return;
-    const seed = topicRef.current;
-    const knownCategory = seed && (TOPIC_CATEGORIES as readonly string[]).includes(seed.category);
-    setName(seed?.name ?? '');
-    setCategory(seed ? (knownCategory ? seed.category : '__custom') : 'Docker');
-    setCustomCategory(seed && !knownCategory ? seed.category : '');
-    setStatus(seed?.status ?? 'learning');
-    setProgress(seed?.progress ?? 0);
-    setConfidence(seed?.confidence ?? 3);
-    setDifficulty(seed?.difficulty ?? 'medium');
-    setLastStudiedAt(seed?.lastStudiedAt ?? '');
-    setNextRevisionAt(seed?.nextRevisionAt ?? '');
-    setResourceUrl(seed?.resourceUrl ?? '');
-    setNotes(seed?.notes ?? '');
+    const knownCategory = topic && (TOPIC_CATEGORIES as readonly string[]).includes(topic.category);
+    setName(topic?.name ?? '');
+    setCategory(topic ? (knownCategory ? topic.category : '__custom') : 'Docker');
+    setCustomCategory(topic && !knownCategory ? topic.category : '');
+    setStatus(topic?.status ?? 'learning');
+    setProgress(topic?.progress ?? 0);
+    setConfidence(topic?.confidence ?? 3);
+    setDifficulty(topic?.difficulty ?? 'medium');
+    setLastStudiedAt(topic?.lastStudiedAt ?? '');
+    setNextRevisionAt(topic?.nextRevisionAt ?? '');
+    setResourceUrl(topic?.resourceUrl ?? '');
+    setNotes(topic?.notes ?? '');
     setError('');
-  }, [open]);
+  }, [open, topic]);
 
   const categories = Array.from(new Set([...TOPIC_CATEGORIES, ...topics.map((entry) => entry.category)]));
 
@@ -81,8 +77,8 @@ export function TopicDialog({
         resourceUrl: resourceUrl.trim(),
         notes,
       };
-      if (topicRef.current) {
-        await store.updateTopic(topicRef.current.id, payload);
+      if (topic) {
+        await store.updateTopic(topic.id, payload);
         store.toast({ title: 'Topic updated', message: name.trim(), tone: 'ok' });
       } else {
         await store.addTopic(payload);
@@ -94,7 +90,7 @@ export function TopicDialog({
     }
   };
 
-  const suggestedInterval = nextRevisionInterval(confidence, topicRef.current?.revisionCount ?? 0);
+  const suggestedInterval = nextRevisionInterval(confidence, topic?.revisionCount ?? 0);
 
   return (
     <Modal

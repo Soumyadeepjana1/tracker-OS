@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Confidence, Topic } from '@/types';
 import { store, useApp } from '@/store/store';
 import { Modal } from '@/components/ui/overlay';
@@ -30,22 +30,18 @@ export function RevisionDialog({
   const [notes, setNotes] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const topicRef = useRef(topic);
-  topicRef.current = topic;
-
   useEffect(() => {
     if (!open) return;
-    const seed = topicRef.current;
-    setTopicId(seed?.id ?? topics[0]?.id ?? '');
-    setConfidence(seed?.confidence ?? 3);
+    setTopicId(topic?.id ?? topics[0]?.id ?? '');
+    setConfidence(topic?.confidence ?? 3);
     setMinutes(25);
-    setNotes(seed?.notes ?? '');
-  }, [open, topics]);
+    setNotes(topic?.notes ?? '');
+  }, [open, topics, topic]);
 
   const selected = topics.find((entry) => entry.id === topicId) ?? null;
 
   const submit = async () => {
-    const target = selected ?? topicRef.current;
+    const target = selected ?? topic;
     if (!target) {
       store.toast({ title: 'Pick a topic', message: 'Add a topic first, then log revisions.', tone: 'warn' });
       return;

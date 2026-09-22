@@ -17,9 +17,11 @@ import {
   TONE_CLASSES,
 } from '@/components/ui/primitives';
 import { DonutChart } from '@/components/charts';
+import { PracticeModeModal } from '@/features/revision/PracticeModeModal';
 import { RevisionDialog } from '@/features/shared/RevisionDialog';
 import { TopicDialog } from '@/features/shared/TopicDialog';
 import {
+  IconBrain,
   IconBulb,
   IconCheckCircle,
   IconClock,
@@ -40,6 +42,8 @@ export function RevisionPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Topic | null>(null);
   const [revisionTopic, setRevisionTopic] = useState<Topic | null>(null);
+
+  const [practiceModalOpen, setPracticeModalOpen] = useState(false);
 
   const today = todayISO();
 
@@ -98,6 +102,13 @@ export function RevisionPage() {
         description="Revise at the moment you are about to forget. Confidence drives the next interval, so keep it honest."
         actions={
           <>
+            <Button
+              variant="secondary"
+              icon={<IconBrain size={15} />}
+              onClick={() => setPracticeModalOpen(true)}
+            >
+              Start Practice Quiz
+            </Button>
             <Button
               variant="secondary"
               icon={<IconSparkles size={15} />}
@@ -396,6 +407,7 @@ export function RevisionPage() {
 
       <RevisionDialog open={Boolean(revisionTopic)} onClose={() => setRevisionTopic(null)} topic={revisionTopic} />
       <TopicDialog open={dialogOpen} onClose={() => setDialogOpen(false)} topic={editing} />
+      <PracticeModeModal open={practiceModalOpen} onClose={() => setPracticeModalOpen(false)} />
     </PageBody>
   );
 }
